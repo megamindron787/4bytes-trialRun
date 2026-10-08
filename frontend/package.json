@@ -1,0 +1,20 @@
+{
+  "name": "campus-issue-tracker-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend web client for Campus Issue Tracker",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "campus",
+    "hostel",
+    "issue-tracker",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC"
+}
