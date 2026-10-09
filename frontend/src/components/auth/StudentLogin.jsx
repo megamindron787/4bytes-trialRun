@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { loginUser } from '../../services/authService';
 import {
   Mail,
   Lock,
@@ -10,7 +11,6 @@ import {
   CheckCircle2,
   HelpCircle,
   GraduationCap,
-  Sparkles,
   KeyRound
 } from 'lucide-react';
 
@@ -111,17 +111,6 @@ export default function StudentLogin({
     }
   };
 
-  // Quick fill demo student account for rapid testing
-  const handleQuickFillDemo = () => {
-    setFormData({
-      email: `student@${defaultCollegeDomain}`,
-      password: 'student#pvpit123',
-      rememberMe: true,
-    });
-    setErrors({});
-    setServerError('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched({ email: true, password: true });
@@ -138,61 +127,14 @@ export default function StudentLogin({
     setIsLoading(true);
 
     try {
-      // Simulate network authentication request
-      await new Promise((resolve) => setTimeout(resolve, 850));
-
-      const normalizedEmail = formData.email.trim().toLowerCase();
-
-      // Check registered users in localStorage or fallback to standard demo user
-      const savedUsers = JSON.parse(localStorage.getItem('campusfix_users') || '[]');
-      let matchedUser = savedUsers.find(
-        (u) => u.email.toLowerCase() === normalizedEmail && u.password === formData.password
-      );
-
-      // Allow demo login if entered
-      if (!matchedUser && (normalizedEmail.startsWith('student@') || normalizedEmail.includes('demo'))) {
-        matchedUser = {
-          id: 'demo-student-01',
-          fullName: 'Siddhesh Deshmukh',
-          rollNo: '21CS088',
-          yearOfStudy: 'TE',
-          email: normalizedEmail,
-          role: 'student',
-          department: 'Computer Engineering',
-          createdAt: new Date().toISOString(),
-        };
-      }
-
-      // If user not found and not demo, check if at least password meets length
-      // For frictionless demo evaluation, if user is not in list but email matches demo convention or any valid mock
-      if (!matchedUser) {
-        // Fallback mock student to ensure smooth evaluation experience
-        matchedUser = {
-          id: `student-${Date.now().toString(36)}`,
-          fullName: normalizedEmail.split('@')[0].replace('.', ' ').toUpperCase(),
-          rollNo: '22CS' + Math.floor(100 + Math.random() * 900),
-          yearOfStudy: 'SE',
-          email: normalizedEmail,
-          role: 'student',
-          department: 'Information Technology',
-          createdAt: new Date().toISOString(),
-        };
-      }
-
-      // Construct auth session payload
-      const authSession = {
-        token: 'mock-jwt-token-' + Math.random().toString(36).substring(2),
-        user: matchedUser,
-        loginAt: new Date().toISOString(),
-        rememberMe: formData.rememberMe,
-      };
-
-      // Persist auth session in localStorage
-      localStorage.setItem('campusfix_auth', JSON.stringify(authSession));
-      localStorage.setItem('campusfix_currentUser', JSON.stringify(matchedUser));
+      const result = await loginUser({
+        email: formData.email,
+        password: formData.password,
+        expectedRole: 'student',
+      });
 
       if (onSuccess) {
-        onSuccess(matchedUser);
+        onSuccess(result.user);
       }
     } catch (err) {
       setServerError(err.message || 'Authentication failed. Please check your credentials.');
@@ -227,22 +169,7 @@ export default function StudentLogin({
         </p>
       </div>
 
-      {/* Demo Credentials Quick-Fill Banner */}
-      <div className="mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 transition-all hover:border-indigo-200">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
-          <span>
-            Testing? Use demo: <strong className="text-slate-800">student@{defaultCollegeDomain}</strong>
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleQuickFillDemo}
-          className="font-semibold text-indigo-600 hover:text-indigo-700 bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors"
-        >
-          Auto Fill
-        </button>
-      </div>
+
 
       {/* Server / Global Error Banner */}
       {serverError && (

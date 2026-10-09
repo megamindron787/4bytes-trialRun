@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { registerStudent } from '../../services/authService';
 import {
   User,
   Hash,
@@ -182,56 +183,21 @@ export default function StudentRegister({
     setIsLoading(true);
 
     try {
-      // Simulate API registration latency
-      await new Promise((resolve) => setTimeout(resolve, 950));
-
-      const normalizedEmail = formData.email.trim().toLowerCase();
-
-      // Retrieve existing users from localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('campusfix_users') || '[]');
-
-      // Check if email or roll number already registered
-      const emailExists = existingUsers.some(
-        (u) => u.email.toLowerCase() === normalizedEmail
-      );
-      if (emailExists) {
-        setServerError('A student with this college email is already registered. Please sign in instead.');
-        setIsLoading(false);
-        return;
-      }
-
-      const newStudent = {
-        id: `stu-${Date.now().toString(36)}`,
-        fullName: formData.fullName.trim(),
-        rollNo: formData.rollNo.trim().toUpperCase(),
+      const result = await registerStudent({
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName,
+        rollNo: formData.rollNo,
         yearOfStudy: formData.yearOfStudy,
         department: formData.department,
-        email: normalizedEmail,
-        password: formData.password, // In real app, hashed on backend
-        role: 'student',
-        verifiedStudent: normalizedEmail.endsWith(`@${defaultCollegeDomain.toLowerCase()}`),
-        createdAt: new Date().toISOString(),
-      };
-
-      // Store in users registry
-      existingUsers.push(newStudent);
-      localStorage.setItem('campusfix_users', JSON.stringify(existingUsers));
-
-      // Automatically sign in the student
-      const authSession = {
-        token: 'mock-jwt-token-' + Math.random().toString(36).substring(2),
-        user: newStudent,
-        loginAt: new Date().toISOString(),
-      };
-      localStorage.setItem('campusfix_auth', JSON.stringify(authSession));
-      localStorage.setItem('campusfix_currentUser', JSON.stringify(newStudent));
+      });
 
       setSuccessNotice(true);
 
       // Brief delay so user sees registration confirmation before redirect
       setTimeout(() => {
         if (onSuccess) {
-          onSuccess(newStudent);
+          onSuccess(result.user);
         }
       }, 700);
     } catch (err) {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { loginUser } from '../../services/authService';
 import {
   Mail,
   Lock,
@@ -10,7 +11,6 @@ import {
   CheckCircle2,
   HelpCircle,
   ShieldCheck,
-  Sparkles,
   KeyRound,
   Building2
 } from 'lucide-react';
@@ -84,17 +84,6 @@ export default function AdminLogin({
     setErrors((prev) => ({ ...prev, [name]: fieldErrors[name] || '' }));
   };
 
-  const handleQuickFillDemo = () => {
-    setFormData({
-      email: `admin@${defaultCollegeDomain}`,
-      password: 'admin#pvpit2024',
-      department: 'Estate & Maintenance',
-      rememberMe: true,
-    });
-    setErrors({});
-    setServerError('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched({ email: true, password: true });
@@ -109,39 +98,14 @@ export default function AdminLogin({
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 850));
-
-      const normalizedEmail = formData.email.trim().toLowerCase();
-      const savedUsers = JSON.parse(localStorage.getItem('campusfix_admins') || '[]');
-      let matchedAdmin = savedUsers.find(
-        (u) => u.email.toLowerCase() === normalizedEmail && u.password === formData.password
-      );
-
-      if (!matchedAdmin) {
-        matchedAdmin = {
-          id: 'admin-01',
-          fullName: 'Prof. Suresh Patil',
-          employeeId: 'ADM-2041',
-          department: formData.department === 'All Departments' ? 'Estate & Maintenance' : formData.department,
-          designation: 'Campus Maintenance Superintendent',
-          email: normalizedEmail,
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        };
-      }
-
-      const authSession = {
-        token: 'mock-admin-jwt-' + Math.random().toString(36).substring(2),
-        user: matchedAdmin,
-        loginAt: new Date().toISOString(),
-        rememberMe: formData.rememberMe,
-      };
-
-      localStorage.setItem('campusfix_auth', JSON.stringify(authSession));
-      localStorage.setItem('campusfix_currentUser', JSON.stringify(matchedAdmin));
+      const result = await loginUser({
+        email: formData.email,
+        password: formData.password,
+        expectedRole: 'admin',
+      });
 
       if (onSuccess) {
-        onSuccess(matchedAdmin);
+        onSuccess(result.user);
       }
     } catch (err) {
       setServerError(err.message || 'Admin authentication failed.');
@@ -165,22 +129,7 @@ export default function AdminLogin({
         </p>
       </div>
 
-      {/* Demo Credentials Quick-Fill Banner */}
-      <div className="mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600 transition-all hover:border-indigo-200">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-          <span>
-            Demo Admin: <strong className="text-slate-800">admin@{defaultCollegeDomain}</strong>
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleQuickFillDemo}
-          className="font-bold text-indigo-600 hover:text-indigo-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs hover:border-indigo-300 transition-colors"
-        >
-          Auto Fill
-        </button>
-      </div>
+
 
       {serverError && (
         <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-sm text-red-700">

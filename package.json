@@ -1,0 +1,12 @@
+{
+  "name": "campus-issue-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Campus & Hostel Issue Reporting Platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "install:all": "npm --prefix frontend install"
+  }
+}

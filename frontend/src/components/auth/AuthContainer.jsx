@@ -13,8 +13,10 @@ import {
   GraduationCap,
   SlidersHorizontal,
   Clock,
-  KeyRound
+  KeyRound,
+  Database
 } from 'lucide-react';
+import { isSupabaseConfigured } from '../../services/supabaseClient';
 
 /**
  * AuthContainer Component with Dual-Role Selection (Student & Admin)
@@ -309,6 +311,22 @@ export default function AuthContainer({
                   defaultCollegeDomain={collegeDomain}
                 />
               )
+            )}
+          </div>
+
+          {/* Supabase Database Connection Badge */}
+          <div className="mt-4 flex items-center justify-center">
+            {isSupabaseConfigured ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <Database className="w-3.5 h-3.5" />
+                <span>Supabase PostgreSQL Database Connected</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium">
+                <Database className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Supabase Database Auth • Connect credentials in frontend/.env</span>
+              </div>
             )}
           </div>
         </div>
