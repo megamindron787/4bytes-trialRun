@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { registerAdmin } from '../../services/authService';
 import {
   User,
   ShieldCheck,
@@ -35,7 +36,7 @@ export default function AdminRegister({
     department: 'Hostel Administration',
     designation: 'Hostel Warden / Block In-Charge',
     email: '',
-    securityCode: 'CAMPUSFIX_ADMIN_2024', // Preloaded default demo authorization key
+    securityCode: '',
     password: '',
     confirmPassword: '',
     agreeToEthics: true,
@@ -86,10 +87,11 @@ export default function AdminRegister({
       }
     }
 
+    const validKey = import.meta.env.VITE_ADMIN_SECURITY_CODE;
     if (!data.securityCode.trim()) {
       errs.securityCode = 'Admin authorization key is required';
-    } else if (data.securityCode.trim() !== 'CAMPUSFIX_ADMIN_2024') {
-      errs.securityCode = 'Invalid key. Use demo key: CAMPUSFIX_ADMIN_2024';
+    } else if (validKey && data.securityCode.trim() !== validKey) {
+      errs.securityCode = 'Invalid authorization key. Contact campus administration.';
     }
 
     if (!data.password) {
@@ -151,42 +153,19 @@ export default function AdminRegister({
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 950));
-      const normalizedEmail = formData.email.trim().toLowerCase();
-      const existingAdmins = JSON.parse(localStorage.getItem('campusfix_admins') || '[]');
-
-      if (existingAdmins.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-        setServerError('An admin with this email is already registered. Please sign in instead.');
-        setIsLoading(false);
-        return;
-      }
-
-      const newAdmin = {
-        id: `adm-${Date.now().toString(36)}`,
-        fullName: formData.fullName.trim(),
-        employeeId: formData.employeeId.trim().toUpperCase(),
+      const result = await registerAdmin({
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName,
+        employeeId: formData.employeeId,
         department: formData.department,
         designation: formData.designation,
-        email: normalizedEmail,
-        password: formData.password,
-        role: 'admin',
-        createdAt: new Date().toISOString(),
-      };
-
-      existingAdmins.push(newAdmin);
-      localStorage.setItem('campusfix_admins', JSON.stringify(existingAdmins));
-
-      const authSession = {
-        token: 'mock-admin-jwt-' + Math.random().toString(36).substring(2),
-        user: newAdmin,
-        loginAt: new Date().toISOString(),
-      };
-      localStorage.setItem('campusfix_auth', JSON.stringify(authSession));
-      localStorage.setItem('campusfix_currentUser', JSON.stringify(newAdmin));
+        securityCode: formData.securityCode,
+      });
 
       setSuccessNotice(true);
       setTimeout(() => {
-        if (onSuccess) onSuccess(newAdmin);
+        if (onSuccess) onSuccess(result.user);
       }, 700);
     } catch (err) {
       setServerError(err.message || 'Failed to register admin account.');
@@ -320,11 +299,10 @@ export default function AdminRegister({
 
         {/* Security Passcode / Admin Authorization Key */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="mb-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
               Admin Authorization Key <span className="text-rose-500">*</span>
             </label>
-            <span className="text-[11px] font-mono text-indigo-700 font-medium">Demo: CAMPUSFIX_ADMIN_2024</span>
           </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -336,7 +314,7 @@ export default function AdminRegister({
               value={formData.securityCode}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="e.g. CAMPUSFIX_ADMIN_2024"
+              placeholder="Enter campus authorization key"
               className={`w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-white font-mono uppercase focus:outline-none focus:ring-2 ${
                 errors.securityCode ? 'border-red-300 focus:ring-red-200' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100'
               }`}

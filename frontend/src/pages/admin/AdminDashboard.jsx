@@ -1,72 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   ShieldCheck,
   Wrench,
   LogOut,
-  AlertCircle,
   Clock,
   CheckCircle,
-  Filter,
-  UserCheck,
-  Building2,
   SlidersHorizontal,
   ChevronRight,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Inbox
 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Real triage queue (empty until issues are created in database)
+  const [triageQueue] = useState([]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const adminStats = [
-    { label: 'Pending Review', count: 8, icon: Clock, color: 'text-amber-700 bg-amber-50 border-amber-200' },
-    { label: 'Assigned to Teams', count: 14, icon: Wrench, color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
-    { label: 'Resolved (This Month)', count: 42, icon: CheckCircle, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-    { label: 'Avg Resolution Time', count: '4.2h', icon: TrendingUp, color: 'text-blue-700 bg-blue-50 border-blue-200' },
-  ];
+  const pendingCount = triageQueue.filter((i) => i.status === 'Under Review' || i.status === 'Submitted').length;
+  const assignedCount = triageQueue.filter((i) => i.status === 'Assigned' || i.status === 'In Progress').length;
+  const resolvedCount = triageQueue.filter((i) => i.status === 'Resolved').length;
 
-  const triageQueue = [
-    {
-      id: 'ISS-1042',
-      title: 'Hostel B - 3rd Floor Water Dispenser Low Pressure',
-      reportedBy: 'Siddhesh Deshmukh (21CS088)',
-      category: 'Water & Plumbing',
-      assignedTo: 'Plumbing Unit #2',
-      priority: 'High',
-      priorityColor: 'bg-rose-50 text-rose-700 border-rose-200',
-      status: 'In Progress',
-      time: '12m ago',
-    },
-    {
-      id: 'ISS-1041',
-      title: 'Room 204 Ceiling Fan Regulator Sparking',
-      reportedBy: 'Aarav Sharma (22EE014)',
-      category: 'Electrical & Power',
-      assignedTo: 'Unassigned',
-      priority: 'Urgent',
-      priorityColor: 'bg-red-100 text-red-800 border-red-300',
-      status: 'Under Review',
-      time: '34m ago',
-    },
-    {
-      id: 'ISS-1040',
-      title: 'Lab 4 Wi-Fi Access Point Dropping Connections',
-      reportedBy: 'Neha Patil (20IT051)',
-      category: 'IT Infrastructure',
-      assignedTo: 'Network Ops',
-      priority: 'Medium',
-      priorityColor: 'bg-amber-50 text-amber-700 border-amber-200',
-      status: 'Assigned',
-      time: '1h ago',
-    },
+  const adminStats = [
+    { label: 'Pending Review', count: pendingCount, icon: Clock, color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    { label: 'Assigned to Teams', count: assignedCount, icon: Wrench, color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+    { label: 'Resolved (Total)', count: resolvedCount, icon: CheckCircle, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+    { label: 'Avg Resolution Time', count: '0h', icon: TrendingUp, color: 'text-blue-700 bg-blue-50 border-blue-200' },
   ];
 
   return (
@@ -91,7 +59,9 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-sm font-bold text-slate-900">{user?.fullName || 'Campus Administrator'}</span>
-              <span className="text-xs text-slate-600 font-medium">{user?.department || 'Administration'} • ID: {user?.employeeId || 'ADM-01'}</span>
+              <span className="text-xs text-slate-600 font-medium">
+                {user?.department || 'Administration'}{user?.employeeId ? ` • ID: ${user.employeeId}` : ''}
+              </span>
             </div>
             <button
               onClick={handleLogout}
@@ -174,44 +144,56 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          <div className="divide-y divide-slate-100">
-            {triageQueue.map((item) => (
-              <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                      {item.id}
-                    </span>
-                    <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold ${item.priorityColor}`}>
-                      {item.priority} Priority
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">• {item.time}</span>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900">{item.title}</h3>
-                  <p className="text-xs text-slate-600 flex flex-wrap items-center gap-2 font-medium">
-                    <span>👤 {item.reportedBy}</span>
-                    <span>• 🏷️ {item.category}</span>
-                    <span>• 🛠️ Assigned: <strong className="text-slate-800">{item.assignedTo}</strong></span>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-xs font-bold text-indigo-700 hover:text-white bg-indigo-50 hover:bg-indigo-600 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
-                  >
-                    Assign Team
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
-                  >
-                    Update Status
-                  </button>
-                </div>
+          {triageQueue.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-3.5 shadow-xs">
+                <Inbox className="w-7 h-7" />
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-bold text-slate-900">Triage queue is clear</h3>
+              <p className="text-xs text-slate-500 max-w-sm mt-1">
+                There are no open complaints awaiting review or assignment at this time. All reports will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {triageQueue.map((item) => (
+                <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        {item.id}
+                      </span>
+                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-bold ${item.priorityColor}`}>
+                        {item.priority} Priority
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium">• {item.time}</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">{item.title}</h3>
+                    <p className="text-xs text-slate-600 flex flex-wrap items-center gap-2 font-medium">
+                      <span>👤 {item.reportedBy}</span>
+                      <span>• 🏷️ {item.category}</span>
+                      <span>• 🛠️ Assigned: <strong className="text-slate-800">{item.assignedTo}</strong></span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-indigo-700 hover:text-white bg-indigo-50 hover:bg-indigo-600 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+                    >
+                      Assign Team
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      Update Status
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
